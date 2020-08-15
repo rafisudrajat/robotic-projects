@@ -1,20 +1,15 @@
-/*
- *  Author :
- *  Aditya Putra Santosa
- *  13517013
- */
-#ifndef GOAL_FINDER
-#define GOAL_FINDER
+#ifndef POLE_DETECTOR
+#define POLE_DETECTOR
 
 #include "ros/ros.h"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/opencv.hpp"
-#include "daho_vision/GoalPostConfig.h"
-// #include "../src/minIni/minIni.h"
-/////////////////////
+#include "daho_vision/PoleFinderConfig.h"
 #include <vector>
+
+// TODO : Crete pole detector config file
 
 using namespace std;
 using namespace cv;
@@ -29,46 +24,43 @@ using namespace cv;
 
 namespace Robot2019
 {
-class GoalPerceptor
+class PoleFinder
 {
 private:
-  static GoalPerceptor *m_UniqueInstance;
-  vector<int> xGoalPost;
+  // static GoalPerceptor *m_UniqueInstance;
+  vector<int> xPole;
   vector<double> cArea;
   double totalAreaContour;
   int minB, maxB, minG, maxG, minR, maxR;
   int yCrop;
   int sigma, tetha, lambd, gamma;
-  int minFieldRatio, maxFieldRatio;
-  int minFieldAtasR, maxFieldAtasR;
+  // int minFieldRatio, maxFieldRatio;
+  // int minFieldAtasR, maxFieldAtasR;
   bool cekLapangan(RotatedRect boundRect, Mat field);
 
 public:
   int minVarian, maxVarian;
   //Constructor
-  GoalPerceptor();
+  PoleFinder();
   //Destructor
-  ~GoalPerceptor();
+  ~PoleFinder();
   //Setter
   void init();
-  // void init(minIni *ini);
-  // void loadINI(minIni *ini);
-  // void saveINI(minIni *ini);
-  static GoalPerceptor *GetInstance() { return m_UniqueInstance; }
+  // static GoalPerceptor *GetInstance() { return m_UniqueInstance; }
 
   // Attribute config
-  void paramCallback(daho_vision::GoalPostConfig &config, uint32_t level);
+  void paramCallback(daho_vision::PoleFinderConfig &config, uint32_t level);
 
   //Init GUI
   static void on_trackbar(int, void *);
   void initWindow();
   // void initTrackbar();
 
-  void process(Mat gambar, Mat lapangan);
+  void process(Mat m, Mat field);
 
-  vector<int> getXGoalPost() { return xGoalPost; }
+  vector<int> getXPole() { return xPole; }
 
   double getContourPMF(int idx);
 };
-} // namespace Robot2019
+}
 #endif

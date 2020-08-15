@@ -1,8 +1,3 @@
-/*
-/*  Author :
- *  Aditya Putra Santosa
- *  13517013
- */
 #include <iostream>
 #include <vector>
 #include "opencv2/core.hpp"
@@ -17,7 +12,7 @@ using namespace Robot2019;
 
 // #define DEBUG_GOALFINDER
 
-#ifdef DEBUG_GOALFINDER
+#ifdef DEBUG_POLEFINDER
 #define printExpr(EXPR) cout << #EXPR << " : " << EXPR << endl;
 #define printExprC(S, EXPR) cout << S << " : " << EXPR << endl;
 #define printStr(S) cout << S << endl;
@@ -26,12 +21,12 @@ using namespace Robot2019;
 #define printStr(S)
 #endif
 
-GoalPerceptor *GoalPerceptor::m_UniqueInstance = new GoalPerceptor();
+// GoalPerceptor *GoalPerceptor::m_UniqueInstance = new GoalPerceptor();
 
 ////////////////////////////////////
 //Bagian GoalPerceptor
 //Constructor
-GoalPerceptor::GoalPerceptor() {
+PoleFinder::PoleFinder() {
     namedWindow("Deteksi Gawang", WINDOW_NORMAL);
     namedWindow("Pre-Processing", WINDOW_NORMAL);
     namedWindow("Properties Gawang", WINDOW_NORMAL);
@@ -39,16 +34,16 @@ GoalPerceptor::GoalPerceptor() {
     namedWindow("Adaptive Thresold", WINDOW_NORMAL);
 }
 
-GoalPerceptor::~GoalPerceptor() {}
+PoleDetector::~PoleDetector() {}
 
-void GoalPerceptor::init()
+void PoleDetector::init()
 {
 
     initWindow();
     // initTrackbar();
 }
 
-void GoalPerceptor::paramCallback(daho_vision::GoalPostConfig &config, uint32_t level) {
+void PoleFinder::paramCallback(daho_vision::PoleFinderConfig &config, uint32_t level) {
     //Color filter
     minB = config.minB;
     maxB = config.maxB;
@@ -75,7 +70,7 @@ void GoalPerceptor::paramCallback(daho_vision::GoalPostConfig &config, uint32_t 
     maxVarian = config.maxVarian;
 }
 
-void GoalPerceptor::initWindow()
+void PoleFinder::initWindow()
 {
     namedWindow("Deteksi Gawang", WINDOW_NORMAL);
     namedWindow("Pre-Processing", WINDOW_NORMAL);
@@ -111,7 +106,7 @@ bool tiangValid(RotatedRect boundRect)
 }
 
 //Cek apakah bagian atas tiang bukan lapangan dan bagian bawah ada di sekitar lapangan
-bool GoalPerceptor::cekLapangan(RotatedRect boundRect, Mat field)
+bool PoleFinder::cekLapangan(RotatedRect boundRect, Mat field)
 {
     Point2f p[4];
     boundRect.points(p);
@@ -189,7 +184,7 @@ bool GoalPerceptor::cekLapangan(RotatedRect boundRect, Mat field)
 }
 
 //Deteksi tiang gawang, m = img dari webcam, field = mask lapangan
-void GoalPerceptor::process(Mat m, Mat field)
+void PoleFinder::process(Mat m, Mat field)
 {
     Mat fieldCopy;
     cvtColor(field, fieldCopy, COLOR_BGR2GRAY);
@@ -262,7 +257,7 @@ void GoalPerceptor::process(Mat m, Mat field)
 
 //Probability Mass Function setiap kandidat gawang
 //Digunakan di Behavior bersamaan dengan minVarian & maxVarian
-double GoalPerceptor::getContourPMF(int idx)
+double PoleFinder::getContourPMF(int idx)
 {
     if (idx >= 0 && idx < cArea.size())
     {
