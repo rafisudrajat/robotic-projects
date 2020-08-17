@@ -4,7 +4,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/opencv.hpp"
-#include "/include/PoleFinder.h"
+#include "../include/PoleFinder.h"
 
 using namespace std;
 using namespace cv;
@@ -28,10 +28,10 @@ using namespace Robot2019;
 //Constructor
 PoleFinder::PoleFinder() {
     namedWindow("Deteksi Gawang", WINDOW_NORMAL);
-    namedWindow("Pre-Processing", WINDOW_NORMAL);
-    namedWindow("Properties Gawang", WINDOW_NORMAL);
+    // namedWindow("Pre-Processing", WINDOW_NORMAL);
+    // namedWindow("Properties Gawang", WINDOW_NORMAL);
     namedWindow("Pre-Proc Final", WINDOW_NORMAL);
-    namedWindow("Adaptive Thresold", WINDOW_NORMAL);
+    // namedWindow("Adaptive Thresold", WINDOW_NORMAL);
 }
 
 PoleDetector::~PoleDetector() {}
@@ -62,8 +62,6 @@ void PoleFinder::paramCallback(daho_vision::PoleFinderConfig &config, uint32_t l
     // Seleksi
     minFieldRatio = config.minFieldRatio;
     maxFieldRatio = config.maxFieldRatio;
-    minFieldAtasR = config.minFieldAtasR;
-    maxFieldAtasR = config.maxFieldAtasR;
 
     // Statistik
     minVarian = config.minVarian;
@@ -112,75 +110,17 @@ bool PoleFinder::cekLapangan(RotatedRect boundRect, Mat field)
     boundRect.points(p);
     float maxY = MIN(MAX(MAX(p[0].y, p[1].y), MAX(p[2].y, p[3].y)), 480);
     float minY = MAX(MIN(MIN(p[0].y, p[1].y), MIN(p[2].y, p[3].y)), 0);
-    Point2f center = Point2f(boundRect.center.x, maxY);
-    Point2f centerAtas = Point2f(boundRect.center.x, minY);
-    int lebarBoundBox = 50, lBBAtas = 50;
-    int tinggiBoundBox = 10, tBBAtas = 10;
-    int awalX = center.x - lebarBoundBox / 2;
-    int awalY = center.y - tinggiBoundBox / 2;
-    int awalXAtas = centerAtas.x - lebarBoundBox / 2;
-    int awalYAtas = centerAtas.y + tinggiBoundBox / 2;
+    float maxX = MIN(MAX(MAX(p[0].x, p[1].x), MAX(p[2].x, p[3].x)), 640);
+    float minX = MAX(MIN(MIN(p[0].y, p[1].y), MIN(p[2].y, p[3].y)), 0);
 
-    // printStr("Awal")
-    // printExpr(awalX)
-    // printExpr(awalY)
-    // printExpr(lebarBoundBox)
-    // printExpr(tinggiBoundBox)
-    if (awalX < 0)
-    {
-        lebarBoundBox += awalX;
-        awalX = 0;
-    }
-    if (awalX + lebarBoundBox > field.cols)
-    {
-        lebarBoundBox -= (awalX + lebarBoundBox - field.cols);
-    }
-    if (awalY < 0)
-    {
-        awalY = 0;
-        tinggiBoundBox += awalY;
-    }
-    if (awalY + tinggiBoundBox > field.rows)
-    {
-        tinggiBoundBox -= (awalY + tinggiBoundBox - field.rows);
-    }
-    // printStr("===============")
-    // printExpr(awalX)
-    // printExpr(awalY)
-    // printExpr(lebarBoundBox)
-    // printExpr(tinggiBoundBox)
-    // printStr("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\")
-    if (awalXAtas < 0)
-    {
-        awalXAtas = 0;
-        lBBAtas += awalXAtas;
-    }
-    if (awalXAtas + lBBAtas > field.cols)
-    {
-        lBBAtas -= (awalXAtas + lBBAtas - field.cols);
-    }
-    if (awalYAtas < 0)
-    {
-        awalYAtas = 0;
-        tBBAtas += awalYAtas;
-    }
-    if (awalYAtas + tBBAtas > field.rows)
-    {
-        tBBAtas -= (awalYAtas + tBBAtas - field.rows);
-    }
-
-    Rect boundingBox(awalX, awalY, lebarBoundBox, tinggiBoundBox);
-    Rect boundingBoxAtas(awalXAtas, awalYAtas, lBBAtas, tBBAtas);
+    Rect boundingBox(minX, minY, maxX-minX, maxY-minY);
     // rectangle(image, boundingBox, Scalar(255, 200, 200), 2);
     // rectangle(image, boundingBoxAtas, Scalar(0, 0, 0), 5);
     // imshow("Debug gawang", image);
     Mat maskField = field(boundingBox);
-    Mat maskFieldAtas = field(boundingBoxAtas);
     int countNZero = countNonZero(maskField);
-    int cNZAtas = countNonZero(maskFieldAtas);
     double rasioLapangan = (double)countNZero / (lebarBoundBox * tinggiBoundBox) * 100.0;
-    double rasioLapanganAtas = (double)cNZAtas / (lebarBoundBox * tinggiBoundBox) * 100.0;
-    return rasioLapangan >= minFieldRatio && rasioLapangan <= maxFieldRatio && rasioLapanganAtas >= minFieldAtasR && rasioLapanganAtas <= maxFieldAtasR;
+    return rasioLapangan >= minFieldRatio && rasioLapangan <= maxFieldRatio;
 }
 
 //Deteksi tiang gawang, m = img dari webcam, field = mask lapangan
@@ -235,8 +175,8 @@ void PoleFinder::process(Mat m, Mat field)
         if (tiangValid(boundRect))
         {
             //Cek lapangan
-            // if (cekLapangan(boundRect, fieldCopy))
-            // {
+            if (cekLapangan(boundRect, fieldCopy))
+            {
                 xGoalPost.push_back(boundRect.center.x);
                 double area = contourArea(c);
                 cArea.push_back(area);
@@ -247,12 +187,12 @@ void PoleFinder::process(Mat m, Mat field)
                 {
                     line(hasil, rect_points[j], rect_points[(j + 1) % 4], Scalar(255, 0, 0), 4);
                 }
-                putText(hasil, to_string(boundRect.angle), boundRect.center, FONT_HERSHEY_PLAIN, 2, Scalar(0, 255, 0), 2);
-            // }
+                putText(hasil, "Tiang", boundRect.center, FONT_HERSHEY_PLAIN, 2, Scalar(0, 255, 0), 2);
+            }
         }
     }
     imshow("Deteksi Gawang", hasil);
-    // waitKey(1);
+    waitKey(1);
 }
 
 //Probability Mass Function setiap kandidat gawang

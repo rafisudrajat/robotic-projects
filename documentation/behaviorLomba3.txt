@@ -1,0 +1,21 @@
+@startuml
+partition Robot1 {
+  (*) --> "Cari Bola" as cb1
+  --> "Putari bola searah jarum jam"
+  --> "Tendang" as t1
+}
+partition Robot2 {
+  t1 --> "Cari Bola" as cb2
+  --> "Maju ke arah bola" as mb1
+  --> "Putari bola berlawanan jarum jam"
+  --> "Tendang" as t2
+}
+partition Robot1 {
+  t2 --> "Cari Bola" as cb3
+  --> "Maju ke arah bola" as mb2
+  --> "Cari gawang"
+  --> "Positioning robot ke arah gawang"
+  --> "Tendang" as t3
+  --> (*)
+}
+@enduml
