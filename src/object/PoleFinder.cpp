@@ -4,7 +4,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/opencv.hpp"
-#include "../include/PoleFinder.h"
+#include "daho_vision/PoleFinder.h"
 
 using namespace std;
 using namespace cv;
@@ -27,16 +27,16 @@ using namespace Robot2019;
 //Bagian GoalPerceptor
 //Constructor
 PoleFinder::PoleFinder() {
-    namedWindow("Deteksi Gawang", WINDOW_NORMAL);
+    namedWindow("Deteksi Tiang", WINDOW_NORMAL);
     // namedWindow("Pre-Processing", WINDOW_NORMAL);
     // namedWindow("Properties Gawang", WINDOW_NORMAL);
     namedWindow("Pre-Proc Final", WINDOW_NORMAL);
     // namedWindow("Adaptive Thresold", WINDOW_NORMAL);
 }
 
-PoleDetector::~PoleDetector() {}
+PoleFinder::~PoleFinder() {}
 
-void PoleDetector::init()
+void PoleFinder::init()
 {
 
     initWindow();
@@ -108,10 +108,10 @@ bool PoleFinder::cekLapangan(RotatedRect boundRect, Mat field)
 {
     Point2f p[4];
     boundRect.points(p);
-    float maxY = MIN(MAX(MAX(p[0].y, p[1].y), MAX(p[2].y, p[3].y)), 480);
-    float minY = MAX(MIN(MIN(p[0].y, p[1].y), MIN(p[2].y, p[3].y)), 0);
-    float maxX = MIN(MAX(MAX(p[0].x, p[1].x), MAX(p[2].x, p[3].x)), 640);
-    float minX = MAX(MIN(MIN(p[0].y, p[1].y), MIN(p[2].y, p[3].y)), 0);
+    int maxY = (int) MIN(MAX(MAX(p[0].y, p[1].y), MAX(p[2].y, p[3].y)), 480);
+    int minY = (int) MAX(MIN(MIN(p[0].y, p[1].y), MIN(p[2].y, p[3].y)), 0);
+    int maxX = (int) MIN(MAX(MAX(p[0].x, p[1].x), MAX(p[2].x, p[3].x)), 640);
+    int minX = (int) MAX(MIN(MIN(p[0].x, p[1].x), MIN(p[2].x, p[3].x)), 0);
 
     Rect boundingBox(minX, minY, maxX-minX, maxY-minY);
     // rectangle(image, boundingBox, Scalar(255, 200, 200), 2);
@@ -119,7 +119,7 @@ bool PoleFinder::cekLapangan(RotatedRect boundRect, Mat field)
     // imshow("Debug gawang", image);
     Mat maskField = field(boundingBox);
     int countNZero = countNonZero(maskField);
-    double rasioLapangan = (double)countNZero / (lebarBoundBox * tinggiBoundBox) * 100.0;
+    double rasioLapangan = (double)countNZero / ((maxX-minX) * (maxY-minY)) * 100.0;
     return rasioLapangan >= minFieldRatio && rasioLapangan <= maxFieldRatio;
 }
 
@@ -143,8 +143,8 @@ void PoleFinder::process(Mat m, Mat field)
     adaptiveThreshold(pp, pp, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY, 5, 0);
     GaussianBlur(pp, pp, Size(5, 5), 0);
     //--------------------------------Crop setengah atas--------------------------------
-    Mat roi = pp(Rect(0, 0, 640, yCrop));
-    roi.setTo(Scalar(0, 0, 0));
+    // Mat roi = pp(Rect(0, 0, 640, yCrop));
+    // roi.setTo(Scalar(0, 0, 0));
     //--------------------------------Gabor filter--------------------------------
     Mat hasilGabor1, hasilGabor2;
     Size2i sizeKernel(3, 3);
@@ -166,7 +166,7 @@ void PoleFinder::process(Mat m, Mat field)
     vector<vector<Point>> contours;
     findContours(pp, contours, RETR_TREE, CHAIN_APPROX_SIMPLE);
     //--------------------------------Seleksi contours yang sesuai & tampilkan--------------------------------
-    xGoalPost.clear();
+    xPole.clear();
     cArea.clear();
     totalAreaContour = 0;
     for (vector<Point> c : contours)
@@ -177,7 +177,7 @@ void PoleFinder::process(Mat m, Mat field)
             //Cek lapangan
             if (cekLapangan(boundRect, fieldCopy))
             {
-                xGoalPost.push_back(boundRect.center.x);
+                xPole.push_back(boundRect.center.x);
                 double area = contourArea(c);
                 cArea.push_back(area);
                 totalAreaContour += area;
@@ -191,7 +191,7 @@ void PoleFinder::process(Mat m, Mat field)
             }
         }
     }
-    imshow("Deteksi Gawang", hasil);
+    imshow("Deteksi Tiang", hasil);
     waitKey(1);
 }
 

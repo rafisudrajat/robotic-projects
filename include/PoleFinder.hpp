@@ -34,7 +34,7 @@ private:
   int minB, maxB, minG, maxG, minR, maxR;
   int yCrop;
   int sigma, tetha, lambd, gamma;
-  // int minFieldRatio, maxFieldRatio;
+  int minFieldRatio, maxFieldRatio;
   // int minFieldAtasR, maxFieldAtasR;
   bool cekLapangan(RotatedRect boundRect, Mat field);
 
